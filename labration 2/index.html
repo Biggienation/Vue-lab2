@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Min film- och serielista</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/basic-template.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>MangaList</h1>
+        </header>
+
+        <main>
+            <!-- Inloggning -->
+            <div v-if="!username" class="mangaList">
+                <p>Skriv in ditt namn för att börja:</p>
+                <input v-model="enterusername" placeholder="Ditt namn">
+                <button @click="login">Logga in</button>
+            </div>
+
+            <div v-else class="mangaList">
+                <p>Välkommen, {{ username }}!</p>
+
+                <!-- Formulär för att lägga till filmer -->
+                <form @submit.prevent="addMovie">
+                    <input v-model="newMovie.title" placeholder="Title" required>
+                    <input v-model="newMovie.genre" placeholder="Genre" required>
+                    <input type="number" v-model="newMovie.chapter" placeholder="Chapters" required>
+                    <button type="submit">Add</button>
+                </form>
+
+                <!-- Lista på filmer -->
+                <div v-if="movies.length > 0">
+                    <ul>
+                        <li v-for="(movie, index) in sortedMovies" :key="movie.originalIndex" :class="{ favorite: movie.favorite }">
+                            <strong>{{ movie.title }}</strong> ({{ movie.genre }})
+                            <div class="chapter-input">
+                                <input type="number" v-model="movies[movie.originalIndex].currentChapter" /> / {{ movie.chapter }}
+                            </div>
+                            <div v-if="movie.watched">
+                                <span class="material-symbols-outlined">check_circle</span>
+                                Watched
+                            </div>
+                            <div class="list-buttons">
+                                <button @click="toggleFavorite(movie.originalIndex)">
+                                    <span class="material-symbols-outlined">star</span>
+                                    Favorite</button>
+                                <button @click="removeMovie(movie.originalIndex)">
+                                    <span class="material-symbols-outlined">delete</span>
+                                    Remove</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <p v-else>You have no movies in the list.</p>
+            </div>
+         </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    username: "",
+                    newMovie: { title: "", genre: "", chapter: "" },
+                    movies: [
+                        { title: "Naruto", genre: "Anime", chapter: 72, favorite: true, watched: true },
+                        { title: "One Piece", genre: "Anime", chapter: 1000, favorite: false , watched:true },
+                        { title: "Attack on Titan", genre: "Anime", chapter: 139, favorite: true, watched:false }
+                    ]
+                };
+            },
+            computed: {
+                sortedMovies() {
+                    // Favoritfilmer visas överst, men behåll originalindex för att undvika indexproblem
+                    return this.movies
+                        .map((movie, idx) => ({ ...movie, originalIndex: idx }))
+                        .sort((a, b) => b.favorite - a.favorite);
+                }
+                
+            },
+            methods: {
+                addMovie() {
+                    this.movies.push({
+                        title: this.newMovie.title,
+                        genre: this.newMovie.genre,
+                        chapter: this.newMovie.chapter,
+                        favorite: false,
+                        watched: false
+                    });
+                    this.newMovie.title = "";
+                    this.newMovie.genre = "";
+                    this.newMovie.chapter = "";
+                },
+                removeMovie(index) {
+                    this.movies.splice(index, 1);
+                },
+                toggleFavorite(index) {
+                    this.movies[index].favorite = !this.movies[index].favorite;
+                },
+                login() {
+                    if (this.enterusername.trim()) {
+                        this.username = this.enterusername.trim();
+                        this.enterusername = "";
+                    }
+                }
+            }
+        }).mount("#app");
+    </script>
+</body>
+
+</html>
