@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MangaList</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/basic-template.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>MangaList</h1>
+
+            <nav id="right-menu" v-if="loggedin">
+                <button class="material-symbols-outlined" aria-label="Search">search</button>
+
+                <div id="dropdown">
+                    <button class="material-symbols-outlined" aria-haspopup="true">menu</button>
+                    <div id="dropdown-content">
+                        <a href="#">Profile</a>
+                        <a href="#">Settings</a>
+                        <a href="#" @click="loggedin = false">Log out</a>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <!-- login -->
+            <section v-if="!loggedin" class="mangaList-login">
+                <p>Welcome to MangaList</p>
+                <input v-model="usernameInput" placeholder="username">
+                <input type="password" v-model="passwordInput" placeholder="password">
+                <button @click="login">Log in</button>
+            </section>
+
+            <!-- logged in: manga list -->
+            <section v-else class="mangaList">
+
+                <!-- Form for adding mangas -->
+                <section class="add-manga">
+                    <h3>Välkommen, {{ username }}!</h3>
+                    <form @submit.prevent="addManga">
+                        <input v-model="newManga.title" placeholder="Title" required>
+                        <input v-model="newManga.genre" placeholder="Genre" required>
+                        <input type="number" v-model.number="newManga.chapter" placeholder="Chapters" required>
+                        <button type="submit">Add</button>
+                    </form>
+                </section>
+
+                <!-- list of mangas -->
+                <section v-if="mangas.length > 0">
+                    <ul>
+                        <li v-for="(manga, idx) in sortedMangas" :key="manga.originalIndex">
+                            <article :class="{ favorite: manga.favorite }">
+                                <h3 id="a1">{{ manga.title }}</h3>
+
+                                <p id="a2" :class="{ watched: manga.watched }">
+                                    <span class="material-symbols-outlined">check_circle</span>
+                                    Watched
+                                </p>
+
+                                <p id="a3">Genre: ({{ manga.genre }})</p>
+
+                                <label id="a4">
+                                    <input type="number" v-model.number="manga.currentChapter" min="0"
+                                        @change="submitChapter(manga.originalIndex)" />
+                                    / {{ manga.chapter }}
+                                </label>
+
+                                <div class="list-buttons" id="a5">
+                                    <button class="material-symbols-outlined"
+                                        @click="toggleFavorite(manga.originalIndex)">favorite</button>
+                                    <button class="material-symbols-outlined"
+                                        @click="removeManga(manga.originalIndex)">delete</button>
+                                </div>
+                            </article>
+                        </li>
+                    </ul>
+                </section>
+
+                <p v-else>You have no mangas in the list.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loggedin: false,
+                    password: "hemligt",
+                    username: "",
+                    usernameInput: "",
+                    passwordInput: "",
+                    newManga: { title: "", genre: "", chapter: "", currentChapter: 0 },
+                    mangas: [
+                        { title: "Naruto", genre: "Shonen", chapter: 72, favorite: true, watched: false, currentChapter: 0 },
+                        { title: "One Piece", genre: "Shonen", chapter: 1000, favorite: false, watched: false, currentChapter: 0 },
+                        { title: "Attack on Titan", genre: "Shonen", chapter: 139, favorite: true, watched: false, currentChapter: 0 }
+                    ]
+                };
+            },
+            computed: {
+                sortedMangas() {
+                    return this.mangas
+                        .map((manga, idx) => ({ ...manga, originalIndex: idx }))
+                        .sort((a, b) => b.favorite - a.favorite);
+                }
+            },
+            methods: {
+                addManga() {
+                    this.mangas.push({
+                        title: this.newManga.title,
+                        genre: this.newManga.genre,
+                        chapter: Number(this.newManga.chapter),
+                        currentChapter: 0,
+                        favorite: false,
+                        watched: false
+                    });
+                    // reset form
+                    this.newManga.title = "";
+                    this.newManga.genre = "";
+                    this.newManga.chapter = "";
+                    this.newManga.currentChapter = 0;
+                },
+
+                removeManga(index) {
+                    this.mangas.splice(index, 1);
+                },
+
+                toggleFavorite(index) {
+                    this.mangas[index].favorite = !this.mangas[index].favorite;
+                },
+
+                // Change watched status based on chapter input
+                submitChapter(index) {
+                    const manga = this.mangas[index];
+                    if (!manga) return;
+                    if (Number(manga.currentChapter) >= Number(manga.chapter)) {
+                        manga.watched = true;
+                        manga.currentChapter = Number(manga.chapter);
+                    } else {
+                        manga.watched = false;
+                    }
+                },
+
+                // Example login
+                login() {
+                    if (!this.usernameInput || !this.usernameInput.trim()) {
+                        alert("Please enter a username.");
+                        return;
+                    }
+                    this.username = this.usernameInput.trim();
+                    this.usernameInput = "";
+
+                    if (this.passwordInput === this.password) {
+                        this.loggedin = true;
+                    } else {
+                        alert("Wrong password!");
+                    }
+                    this.passwordInput = "";
+                }
+            }
+        }).mount("#app");
+    </script>
+</body>
+
+</html>
